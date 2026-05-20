@@ -9,21 +9,11 @@ sqlContext = SQLContext(sc)
 
 if __name__ == "__main__":
 
-    # Vérifier que ces codes ISO3 correspondent exactement à ceux de cod_country_iso3_local_3rd_party
-    COUNTRY_MAP = {
-        "fr": "FRA",
-        "it": "ITA",
-        "gb": "GBR",
-        "es": "ESP",
-        "de": "DEU",
-        "nl": "NLD",
-        "be": "BEL"
-    }
+    COUNTRIES = ["fr", "it", "gb", "es", "de", "nl", "be"]
 
     dfs = [
         load_dataset_spark(sqlContext, f"entrep_{c}_monthly_v1", ["enpers", "enlbre"])
-        .withColumn("cod_country_iso3_local_3rd_party", lit(iso3))
-        for c, iso3 in COUNTRY_MAP.items()
+        for c in COUNTRIES
     ]
 
     raw_lookup_df = dfs[0]
