@@ -1,0 +1,17 @@
+    # --- PATCH TEMPORAIRE : enlbre complet depuis RAW ---
+    raw_social_reason_lookup_df = load_dataset_spark(
+        sqlContext,
+        "RAW_social_reason_lookup",
+        ["id_local_3rd_party", "social_reason_local_local_3rd_party", "cod_country_iso3_local_3rd_party"]
+    )
+
+    DCP_TRUSTED_local_operational_third_party_monthly_v1_df = (
+        DCP_TRUSTED_local_operational_third_party_monthly_v1_df
+        .drop("social_reason_local_local_3rd_party")
+        .join(
+            raw_social_reason_lookup_df,
+            on=["id_local_3rd_party", "cod_country_iso3_local_3rd_party"],
+            how="left"
+        )
+    )
+    # --- FIN PATCH ---
