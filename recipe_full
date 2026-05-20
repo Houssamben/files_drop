@@ -1,30 +1,23 @@
 # -*- coding: utf-8 -*-
-from pyspark import SparkContext
-from pyspark.sql import SQLContext
-from pyspark.sql.functions import lit
-from spark_dataframe_helper import load_dataset_spark, write_dataset_spark
-
-sc = SparkContext.getOrCreate()
-sqlContext = SQLContext(sc)
+import dataiku
+import pandas as pd
 
 if __name__ == "__main__":
 
     COUNTRIES = ["fr", "it", "gb", "es", "de", "nl", "be"]
 
     dfs = [
-        load_dataset_spark(sqlContext, f"entrep_{c}_monthly_v1", ["enpers", "enlbre"])
+        dataiku.Dataset(f"entrep_{c}_monthly_v1").get_dataframe(columns=["enpers", "enlbre"])
         for c in COUNTRIES
     ]
 
-    raw_lookup_df = dfs[0]
-    for df in dfs[1:]:
-        raw_lookup_df = raw_lookup_df.union(df)
-
     raw_lookup_df = (
-        raw_lookup_df
-        .distinct()
-        .withColumnRenamed("enpers", "id_local_3rd_party")
-        .withColumnRenamed("enlbre", "social_reason_local_local_3rd_party")
+        pd.concat(dfs, ignore_index=True)
+        .drop_duplicates()
+        .rename(columns={
+            "enpers": "id_local_3rd_party",
+            "enlbre": "social_reason_local_local_3rd_party"
+        })
     )
 
-    write_dataset_spark("RAW_social_reason_lookup", raw_lookup_df)
+    dataiku.Dataset("RAW_social_reason_lookup").write_with_schema(raw_lookup_df)
