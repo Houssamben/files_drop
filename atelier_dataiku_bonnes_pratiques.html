@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atelier Dataiku — Bonnes Pratiques</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --accent: #4f8ef7;
+    --accent2: #a78bfa;
+    --green: #34d399;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --text: #e2e8f0;
+    --muted: #8892a4;
+    --border: #2d3348;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 36px 40px 28px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  header h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #fff;
+  }
+
+  header h1 span {
+    color: var(--accent);
+  }
+
+  header p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .nav-tabs {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .nav-tab {
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .nav-tab:hover { border-color: var(--accent); color: var(--text); }
+  .nav-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .nav-tab .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 0;
+  }
+
+  .category-section { display: none; }
+  .category-section.active { display: block; }
+
+  .category-header {
+    margin-bottom: 28px;
+  }
+
+  .category-header h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+  }
+
+  .category-header h2 .icon {
+    font-size: 1.5rem;
+  }
+
+  .category-header p {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+
+  .practices-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 768px) {
+    .practices-grid { grid-template-columns: 1fr; }
+    header { padding: 20px; }
+    .main { padding: 24px 16px 0; }
+  }
+
+  .practice-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .practice-card:hover { border-color: #3d4460; }
+
+  .practice-header {
+    padding: 14px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    user-select: none;
+  }
+
+  .practice-num {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(79,142,247,0.1);
+    border-radius: 4px;
+    padding: 2px 7px;
+    min-width: 28px;
+    text-align: center;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .practice-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .toggle-icon {
+    color: var(--muted);
+    font-size: 0.9rem;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .practice-card.open .toggle-icon { transform: rotate(180deg); }
+
+  .practice-body {
+    display: none;
+    padding: 0 16px 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .practice-card.open .practice-body { display: block; }
+
+  .do-dont {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .do-block, .dont-block {
+    border-radius: 7px;
+    padding: 10px 13px;
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  .do-block {
+    background: rgba(52, 211, 153, 0.06);
+    border-left: 3px solid var(--green);
+  }
+
+  .dont-block {
+    background: rgba(248, 113, 113, 0.06);
+    border-left: 3px solid var(--red);
+  }
+
+  .label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .do-block .label { color: var(--green); }
+  .dont-block .label { color: var(--red); }
+
+  code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background: rgba(255,255,255,0.05);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    color: var(--yellow);
+  }
+
+  .level-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+
+  .level-all { background: rgba(167,139,250,0.15); color: var(--accent2); }
+  .level-senior { background: rgba(251,191,36,0.12); color: var(--yellow); }
+  .level-beginner { background: rgba(52,211,153,0.12); color: var(--green); }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--border);
+    margin-top: 16px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.4s ease;
+  }
+
+  .stats {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .stat { font-size: 0.78rem; color: var(--muted); }
+  .stat span { color: var(--text); font-weight: 600; }
+
+  .section-intro {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.7;
+    border-left: 3px solid var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Atelier <span>Dataiku</span> — Bonnes Pratiques</h1>
+  <p>Guide complet pour projets Data Engineering · Python · PySpark · SQL</p>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showCategory('data')" data-cat="data">
+      <span class="dot" style="background:#4f8ef7"></span> 🗄️ Data & Modèle
+    </button>
+    <button class="nav-tab" onclick="showCategory('dataiku')" data-cat="dataiku">
+      <span class="dot" style="background:#a78bfa"></span> ⚙️ Dataiku & Flow
+    </button>
+    <button class="nav-tab" onclick="showCategory('pyspark')" data-cat="pyspark">
+      <span class="dot" style="background:#34d399"></span> 🔥 PySpark
+    </button>
+    <button class="nav-tab" onclick="showCategory('sql')" data-cat="sql">
+      <span class="dot" style="background:#fbbf24"></span> 🧮 SQL Recipe
+    </button>
+    <button class="nav-tab" onclick="showCategory('python')" data-cat="python">
+      <span class="dot" style="background:#f472b6"></span> 🐍 Python Recipe
+    </button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ===== CATEGORIE 1 : DATA & MODELE ===== -->
+  <div class="category-section active" id="cat-data">
+    <div class="category-header">
+      <h2><span class="icon">🗄️</span> Data & Modèle de données</h2>
+      <p>Qualité, structure et format des données — la base de tout projet fiable.</p>
+    </div>
+    <div class="section-intro">
+      Un mauvais modèle de données coûte 10x plus cher à corriger en production qu'en conception.
+      Ces pratiques s'appliquent quel que soit votre niveau technique.
+    </div>
+    <div class="practices-grid" id="grid-data"></div>
+  </div>
+
+  <!-- ===== CATEGORIE 2 : DATAIKU & FLOW ===== -->
+  <div class="category-section" id="cat-dataiku">
+    <div class="category-header">
+      <h2><span class="icon">⚙️</span> Dataiku & Organisation du Flow</h2>
+      <p>Organisation des recipes, datasets, zones et résultats intermédiaires.</p>
+    </div>
+    <div class="section-intro">
+      Un Flow Dataiku bien organisé se lit comme une documentation vivante du pipeline.
+      Chaque zone, chaque dataset doit avoir un rôle clair et unique.
+    </div>
+    <div class="practices-grid" id="grid-dataiku"></div>
+  </div>
+
+  <!-- ===== CATEGORIE 3 : PYSPARK ===== -->
+  <div class="category-section" id="cat-pyspark">
+    <div class="category-header">
+      <h2><span class="icon">🔥</span> PySpark Recipe</h2>
+      <p>Performances, lisibilité et robustesse des traitements distribués.</p>
+    </div>
+    <div class="section-intro">
+      PySpark permet de traiter des volumes massifs — mais un code mal écrit peut être
+      100x plus lent qu'une requête SQL bien optimisée sur les mêmes données.
+    </div>
+    <div class="practices-grid" id="grid-pyspark"></div>
+  </div>
+
+  <!-- ===== CATEGORIE 4 : SQL ===== -->
+  <div class="category-section" id="cat-sql">
+    <div class="category-header">
+      <h2><span class="icon">🧮</span> SQL Recipe</h2>
+      <p>Lisibilité, performance et maintenabilité des requêtes SQL dans Dataiku.</p>
+    </div>
+    <div class="section-intro">
+      SQL reste le langage le plus lisible pour les transformations tabulaires.
+      Une bonne SQL recipe est auto-documentée et rejouable sans effet de bord.
+    </div>
+    <div class="practices-grid" id="grid-sql"></div>
+  </div>
+
+  <!-- ===== CATEGORIE 5 : PYTHON RECIPE ===== -->
+  <div class="category-section" id="cat-python">
+    <div class="category-header">
+      <h2><span class="icon">🐍</span> Python Recipe (Pandas / Polars)</h2>
+      <p>Bonnes pratiques pour les traitements Python sans Spark — lisibilité, performance et robustesse.</p>
+    </div>
+    <div class="section-intro">
+      Pandas est puissant mais facile à mal utiliser sur de gros volumes. Polars est une alternative
+      moderne, plus rapide. Dans les deux cas, la lisibilité et la maintenabilité priment.
+    </div>
+    <div class="practices-grid" id="grid-python"></div>
+  </div>
+
+</div>
+
+<script>
+const DATA = {
+  data: [
+    {
+      title: "Nettoyer et valider les données à l'entrée",
+      level: "all",
+      do: "Appliquer dès la 1ère recipe de traitement : suppression des doublons, cast des types, gestion des nulls. Ex : <code>df.dropDuplicates(['id']).fillna({'status': 'UNKNOWN'})</code>",
+      dont: "Ne jamais laisser des nulls inattendus ou des types mixtes (ex : colonne <code>montant</code> contenant des strings '—') se propager dans les tables aval."
+    },
+    {
+      title: "Nommer les colonnes de façon explicite et cohérente",
+      level: "all",
+      do: "Utiliser <code>snake_case</code>, préfixer par le domaine si besoin : <code>client_id</code>, <code>cmd_date_creation</code>, <code>prd_prix_ht</code>. Convention à définir en équipe.",
+      dont: "Éviter <code>col1</code>, <code>tmp</code>, <code>data</code>, les accents (<code>montant_réel</code>), les espaces ou la casse mixte (<code>MontantHT</code>)."
+    },
+    {
+      title: "Choisir le bon format de stockage selon l'usage",
+      level: "senior",
+      do: "<b>Parquet</b> → datasets intermédiaires volumineux (columnar, compressé). <b>CSV</b> → exports simples ou échanges avec des non-techs. <b>PostgreSQL</b> → résultats finaux consommés par des apps/BI.",
+      dont: "Ne pas utiliser CSV pour des tables >1M lignes dans le flow interne — performances catastrophiques en lecture. Ne pas stocker les résultats finaux dans des datasets Dataiku sans base cible définie."
+    },
+    {
+      title: "Garder uniquement les champs utiles dans chaque dataset",
+      level: "all",
+      do: "Sélectionner explicitement les colonnes nécessaires à chaque étape : <code>SELECT id, montant, date FROM ...</code>. Réduire la largeur des tables intermédiaires.",
+      dont: "Ne pas faire <code>SELECT *</code> ou <code>df</code> complet à chaque étape — cela propage des colonnes inutiles, alourdit les datasets et crée de la confusion."
+    },
+    {
+      title: "Partitionner les grandes tables par date ou clé métier",
+      level: "senior",
+      do: "Partitionner par <code>date_partition</code> (format <code>YYYY-MM-DD</code>) pour les tables de faits. Permet les lectures partielles et réduit les coûts de compute.",
+      dont: "Ne pas écrire une seule partition massive sans organisation temporelle — rend les rejoues partielles impossibles et les lectures très coûteuses."
+    },
+    {
+      title: "Documenter les colonnes sensibles ou calculées",
+      level: "all",
+      do: "Ajouter une description dans le schéma Dataiku pour les colonnes critiques : formule de calcul, source, règle métier. Ex : <code>taux_marge = (CA - CA_cout) / CA</code>.",
+      dont: "Ne pas laisser une colonne <code>flag_eligible</code> ou <code>score_risque</code> sans explication — les consommateurs aval feront de mauvaises hypothèses."
+    },
+    {
+      title: "Ne jamais modifier la source de données brutes (raw)",
+      level: "all",
+      do: "Traiter les données source en lecture seule. Toujours créer un dataset de staging/copie avant toute transformation. La source reste un point de vérité immuable.",
+      dont: "Ne jamais écrire directement dans un dataset de type <code>raw_</code> ou <code>source_</code>. En cas de bug, la donnée d'origine doit rester intacte pour rejouer."
+    },
+    {
+      title: "Standardiser les valeurs de référence (référentiels)",
+      level: "all",
+      do: "Utiliser une table de référence pour les codes : pays (<code>FR</code>, <code>DE</code>), statuts (<code>ACTIF</code>, <code>INACTIF</code>), catégories. Centraliser et joindre.",
+      dont: "Ne pas laisser des valeurs libres comme <code>'France'</code>, <code>'france'</code>, <code>'FR'</code>, <code>'FRA'</code> coexister dans la même colonne — rend les agrégations fausses."
+    },
+    {
+      title: "Tracer la date de dernière mise à jour dans les tables finales",
+      level: "senior",
+      do: "Ajouter une colonne <code>updated_at TIMESTAMP</code> automatiquement alimentée lors de chaque écriture. Indispensable pour le debugging et la confiance des utilisateurs.",
+      dont: "Ne pas livrer une table sans horodatage — impossible de savoir si les données sont fraîches ou obsolètes sans aller regarder les logs du pipeline."
+    },
+    {
+      title: "Valider les volumes en sortie de chaque étape critique",
+      level: "senior",
+      do: "Après une jointure ou un filtre important, vérifier le nombre de lignes : ajouter un assert ou log. Ex : <code>assert df.count() > 0, 'Table vide après jointure !'</code>",
+      dont: "Ne pas supposer qu'une jointure a fonctionné correctement sans vérification — une jointure mal configurée peut silencieusement réduire la table à 0 lignes."
+    }
+  ],
+
+  dataiku: [
+    {
+      title: "Organiser le Flow en zones fonctionnelles distinctes",
+      level: "all",
+      do: "Créer des zones Dataiku nommées : <code>01_RAW</code>, <code>02_STAGING</code>, <code>03_CORE</code>, <code>04_REPORTING</code>. Chaque zone a un rôle unique et clair dans le pipeline.",
+      dont: "Ne pas mélanger les datasets de toutes étapes dans une seule zone plate — le Flow devient illisible après 10 datasets et ingérable à plusieurs."
+    },
+    {
+      title: "1 traitement = 1 recipe. Séparer les responsabilités.",
+      level: "all",
+      do: "Une recipe fait une seule chose : nettoyage, jointure, agrégation ou enrichissement. Nommer explicitement : <code>recipe_clean_clients</code>, <code>recipe_join_commandes_produits</code>.",
+      dont: "Ne pas mettre le nettoyage + la jointure + l'agrégation dans une seule recipe Python de 300 lignes — impossible à déboguer, tester ou rejouer partiellement."
+    },
+    {
+      title: "Sauvegarder les résultats intermédiaires dans des datasets Dataiku (COS/S3)",
+      level: "senior",
+      do: "Matérialiser les étapes clés comme datasets Dataiku (stockage objet : S3 / COS / HDFS). Permet le cache, le debug, la rejouabilité partielle et la visualisation dans l'UI.",
+      dont: "Ne pas tout calculer en mémoire dans une seule recipe sans écriture intermédiaire — en cas d'échec à l'étape 8/10, tout est à recalculer depuis le début."
+    },
+    {
+      title: "Écrire les résultats finaux dans PostgreSQL",
+      level: "senior",
+      do: "Les datasets finaux consommés par la BI ou des APIs doivent être écrits dans la base PostgreSQL via une <b>Write recipe</b> ou un connecteur Dataiku natif. Définir le schéma cible à l'avance.",
+      dont: "Ne pas livrer un résultat final en Parquet ou CSV dans l'objet storage — les consommateurs (BI, apps) ne peuvent pas requêter directement ces formats."
+    },
+    {
+      title: "Nommer les datasets avec un préfixe de zone et un suffixe de type",
+      level: "all",
+      do: "Convention : <code>[zone]_[objet]_[type]</code>. Ex : <code>stg_clients_clean</code>, <code>core_commandes_enriched</code>, <code>rpt_ca_mensuel_final</code>.",
+      dont: "Éviter : <code>dataset1</code>, <code>test</code>, <code>copie_finale_v2</code>, <code>clients_NEW</code> — dans 3 mois, même l'auteur ne sait plus ce que contient le dataset."
+    },
+    {
+      title: "Utiliser les tags et la documentation Dataiku sur chaque dataset clé",
+      level: "all",
+      do: "Renseigner la description du dataset dans l'UI Dataiku : source, fréquence de mise à jour, propriétaire, règles de filtrage. Les tags permettent de filtrer dans le catalogue.",
+      dont: "Ne pas laisser des datasets sans description — un nouveau membre de l'équipe passera des heures à comprendre ce que contient <code>tbl_output_v3_final</code>."
+    },
+    {
+      title: "Utiliser les scénarios Dataiku pour l'orchestration, pas le cron manuel",
+      level: "senior",
+      do: "Définir les scénarios Dataiku pour orchestrer les rebuilds : triggers temporels, conditionnels ou manuels. Les scénarios gèrent les dépendances entre datasets automatiquement.",
+      dont: "Ne pas lancer des recipes manuellement en production ou créer des crons externes qui ne connaissent pas les dépendances du Flow — risque de données incohérentes."
+    },
+    {
+      title: "Versionner le code des recipes via Git intégré",
+      level: "senior",
+      do: "Activer l'intégration Git de Dataiku et committer après chaque évolution significative. Message de commit clair : <code>feat: ajout filtre clients inactifs recipe_clean</code>.",
+      dont: "Ne pas travailler sans versioning — impossible de revenir en arrière en cas de régression, ni de travailler à plusieurs sans conflits."
+    },
+    {
+      title: "Isoler les paramètres configurables dans les variables de projet",
+      level: "senior",
+      do: "Utiliser les variables Dataiku (<code>Project variables</code>) pour les seuils, dates, chemins ou configs : <code>get_custom_variable('date_debut')</code>. Ne jamais hardcoder.",
+      dont: "Ne pas hardcoder des dates, des seuils ou des chemins en dur dans le code des recipes — empêche la rejouabilité et oblige à modifier le code pour chaque exécution."
+    },
+    {
+      title: "Tester sur un échantillon avant de lancer sur l'intégralité des données",
+      level: "all",
+      do: "Dataiku propose l'exécution sur un sample. Toujours valider la logique sur un sous-ensemble avant le run complet. Réduire les coûts de compute et les temps d'attente.",
+      dont: "Ne pas lancer une recipe PySpark sur 50M de lignes pour tester une nouvelle logique — utiliser le sample ou filtrer sur une date récente d'abord."
+    }
+  ],
+
+  pyspark: [
+    {
+      title: "Toujours lire les datasets via l'API Dataiku, jamais en chemin absolu",
+      level: "all",
+      do: "<code>import dataiku; ds = dataiku.Dataset('mon_dataset'); df = ds.get_dataframe()</code>. Pour Spark : <code>df = dataiku.spark.get_dataframe('mon_dataset')</code>.",
+      dont: "Ne jamais faire <code>spark.read.parquet('/path/hdfs/...')</code> en dur — le chemin peut changer, ça casse la portabilité entre environnements (dev/prod)."
+    },
+    {
+      title: "Préférer les transformations Spark natives aux UDF Python",
+      level: "senior",
+      do: "Utiliser <code>pyspark.sql.functions</code> : <code>F.when</code>, <code>F.col</code>, <code>F.regexp_extract</code>. Ces fonctions s'exécutent en JVM, sans sérialisation Python.",
+      dont: "Éviter les <code>udf()</code> Python pour des opérations simples — une UDF est 10-100x plus lente car elle sérialise chaque ligne entre JVM et Python."
+    },
+    {
+      title: "Ne jamais appeler .count() ou .collect() inutilement",
+      level: "senior",
+      do: "Limiter les actions : une seule écriture finale suffit généralement. Si besoin de compter, utiliser <code>df.count()</code> une seule fois et stocker le résultat dans une variable.",
+      dont: "<code>.collect()</code> ramène tout en mémoire driver — sur 10M lignes, c'est un crash assuré. <code>.count()</code> déclenche un job complet — l'appeler 5 fois × 5 recipes = 25 jobs inutiles."
+    },
+    {
+      title: "Utiliser le cache Spark sur les DataFrames réutilisés",
+      level: "senior",
+      do: "<code>df_clients.cache()</code> si le DataFrame est utilisé dans plusieurs transformations en aval. Penser à <code>df.unpersist()</code> une fois terminé pour libérer la mémoire.",
+      dont: "Ne pas recalculer le même DataFrame 3 fois dans la même recipe — Spark recalcule le lineage complet à chaque action si le DataFrame n'est pas caché."
+    },
+    {
+      title: "Écrire du code modulaire avec des fonctions Python claires",
+      level: "all",
+      do: "Découper en fonctions : <code>def clean_clients(df): ...</code>, <code>def enrich_commandes(df, ref): ...</code>. Une fonction = une transformation testable unitairement.",
+      dont: "Ne pas écrire 200 lignes de transformations enchaînées sans aucune fonction — illisible, non testable, et impossible à réutiliser dans une autre recipe."
+    },
+    {
+      title: "Filtrer les données le plus tôt possible dans le pipeline",
+      level: "senior",
+      do: "Appliquer <code>.filter()</code> ou <code>.where()</code> dès la lecture : <code>df.filter(F.col('date') >= '2024-01-01')</code>. Réduit le volume traité dans toutes les étapes suivantes.",
+      dont: "Ne pas lire 100M lignes pour n'en utiliser que 1M en fin de recipe — chaque shuffle et jointure sera calculé sur le volume inutilement large."
+    },
+    {
+      title: "Éviter les jointures cartésiennes et les shuffles excessifs",
+      level: "senior",
+      do: "Vérifier les clés de jointure : <code>df_a.join(df_b, on='client_id', how='left')</code>. Si un DataFrame est petit (<1M lignes), utiliser un <b>broadcast join</b> : <code>F.broadcast(df_small)</code>.",
+      dont: "Ne jamais joindre sans condition (<code>df_a.crossJoin(df_b)</code>) sur de grandes tables — résultat = A×B lignes, soit des milliards de lignes et un cluster qui explose."
+    },
+    {
+      title: "Gérer explicitement le schéma des DataFrames",
+      level: "senior",
+      do: "Définir ou vérifier le schéma après lecture : <code>df.printSchema()</code> en dev. Caster explicitement : <code>F.col('montant').cast('double')</code>. Évite les erreurs silencieuses de type.",
+      dont: "Ne pas laisser Spark inférer les types sur des CSV — il peut déduire <code>montant</code> comme <code>string</code> si la 1ère ligne contient un null, corrompant tous les calculs numériques."
+    },
+    {
+      title: "Logguer les étapes clés avec des prints structurés",
+      level: "all",
+      do: "<code>print(f'[clean_clients] Input: {df.count()} lignes')</code> aux étapes clés. Les logs sont visibles dans Dataiku et permettent de détecter les anomalies de volume rapidement.",
+      dont: "Ne pas coder sans aucun log — en cas d'échec silencieux (jointure qui donne 0 lignes), impossible de savoir à quelle étape le problème est survenu."
+    },
+    {
+      title: "Écrire le résultat final via l'API Dataiku, pas sparkContext directement",
+      level: "all",
+      do: "<code>output_ds = dataiku.Dataset('output'); dataiku.spark.write_dataframe(output_ds, df_result)</code>. Dataiku gère le format, la partition et le schema automatiquement.",
+      dont: "Ne pas faire <code>df.write.parquet('/path/...')</code> directement — le dataset Dataiku ne sera pas mis à jour, les dépendances du Flow seront cassées."
+    }
+  ],
+
+  python: [
+    {
+      title: "Lire et écrire les datasets via l'API Dataiku uniquement",
+      level: "all",
+      do: "<code>import dataiku; df = dataiku.Dataset('mon_dataset').get_dataframe()</code>. Pour écrire : <code>dataiku.Dataset('output').write_with_schema(df)</code>. Fonctionne avec Pandas et Polars.",
+      dont: "Ne jamais lire un fichier via <code>pd.read_csv('/path/...')</code> en dur — le chemin est spécifique à un environnement et casse la portabilité dev/prod."
+    },
+    {
+      title: "Limiter la taille des données chargées en mémoire",
+      level: "senior",
+      do: "Utiliser <code>get_dataframe(limit=100000)</code> pour les tests. En production, filtrer à la source via SQL avant de charger en Python, ou traiter par chunks : <code>for df_chunk in ds.iter_dataframes(chunksize=50000)</code>.",
+      dont: "Ne pas charger 10M lignes dans un DataFrame Pandas sur un nœud avec 8Go de RAM — Python chargera tout en mémoire et le process sera tué par l'OS (OOM kill)."
+    },
+    {
+      title: "Préférer les opérations vectorisées aux boucles Python",
+      level: "senior",
+      do: "Pandas : <code>df['remise'] = df['prix'] * 0.1</code>. Polars : <code>df.with_columns((pl.col('prix') * 0.1).alias('remise'))</code>. Les opérations vectorisées s'exécutent en C sous le capot.",
+      dont: "Ne jamais itérer ligne par ligne avec <code>for i, row in df.iterrows(): df.loc[i,'remise'] = row['prix'] * 0.1</code> — 100x à 1000x plus lent qu'une opération vectorisée."
+    },
+    {
+      title: "Utiliser Polars pour les datasets > 1M lignes si disponible",
+      level: "senior",
+      do: "<code>import polars as pl; df = pl.from_pandas(ds.get_dataframe())</code> ou lire directement en Polars. Polars est multi-threadé par défaut et consomme 2-5x moins de mémoire que Pandas.",
+      dont: "Ne pas utiliser Pandas par habitude sur de gros volumes si Polars est disponible dans l'environnement Dataiku — les gains de performance sont significatifs sans changer la logique."
+    },
+    {
+      title: "Sélectionner uniquement les colonnes nécessaires à la lecture",
+      level: "all",
+      do: "<code>ds.get_dataframe(columns=['client_id', 'montant', 'date'])</code>. Réduit la mémoire consommée et accélère la lecture, surtout sur des tables larges (50+ colonnes).",
+      dont: "Ne pas charger toutes les colonnes puis en supprimer 40 après — les données inutiles ont déjà été lues, désérialisées et chargées en RAM pour rien."
+    },
+    {
+      title: "Structurer le code en fonctions avec des responsabilités claires",
+      level: "all",
+      do: "Organiser en fonctions documentées : <code>def clean_dates(df: pd.DataFrame) -> pd.DataFrame:</code>. Appeler depuis un <code>main()</code>. Facilite les tests unitaires et la relecture.",
+      dont: "Ne pas écrire 300 lignes de transformations séquentielles sans aucune fonction dans le corps de la recipe — impossible à tester, réutiliser ou déboguer partiellement."
+    },
+    {
+      title: "Typer les colonnes explicitement après la lecture",
+      level: "senior",
+      do: "<code>df['montant'] = df['montant'].astype(float); df['date'] = pd.to_datetime(df['date'])</code>. Ne jamais supposer que Dataiku a inféré le bon type depuis la source.",
+      dont: "Ne pas laisser une colonne <code>montant</code> en <code>object</code> (string) et faire des calculs numériques dessus — les résultats seront silencieusement faux ou déclencher des erreurs cryptiques."
+    },
+    {
+      title: "Gérer explicitement les valeurs nulles avant les transformations",
+      level: "all",
+      do: "Décider d'une stratégie pour chaque colonne : <code>df['statut'].fillna('INCONNU')</code> ou <code>df.dropna(subset=['client_id'])</code>. Documenter le choix en commentaire.",
+      dont: "Ne pas ignorer les nulls — une agrégation <code>SUM</code> sur une colonne avec des nulls retourne un résultat tronqué en Pandas, et <code>NaN</code> se propage dans tous les calculs en aval."
+    },
+    {
+      title: "Logger les métriques clés du traitement",
+      level: "all",
+      do: "<code>print(f'[clean_clients] Input: {len(df)} lignes | Nulls client_id: {df.client_id.isna().sum()} | Output: {len(df_clean)} lignes')</code>. Visible dans les logs Dataiku.",
+      dont: "Ne pas coder une recipe sans aucun print — en cas d'anomalie silencieuse (jointure qui multiplie les lignes, filtre trop agressif), aucun moyen de détecter le problème sans relancer."
+    },
+    {
+      title: "Éviter les chaînes de méthodes trop longues et illisibles",
+      level: "all",
+      do: "Découper en étapes intermédiaires nommées : <code>df_filtered = df[df.statut == 'ACTIF']</code>, puis <code>df_grouped = df_filtered.groupby('region')['ca'].sum()</code>.",
+      dont: "Éviter <code>df[df.statut=='ACTIF'].merge(ref).groupby('region')['ca'].sum().reset_index().rename(columns={'ca':'ca_total'}).query('ca_total > 1000')</code> en une ligne — illisible et impossible à déboguer."
+    }
+  ],
+  sql: [
+    {
+      title: "Nommer explicitement chaque CTE avec un verbe d'action",
+      level: "all",
+      do: "<code>WITH filtered_clients AS (...), enriched_orders AS (...), aggregated_revenue AS (...) SELECT * FROM aggregated_revenue</code>. Chaque CTE a un nom qui décrit sa fonction.",
+      dont: "Éviter <code>WITH tmp AS (...), tmp2 AS (...), tmp3 AS (...)</code> — une requête avec 8 CTEs nommées <code>tmp</code> est impossible à lire et à déboguer."
+    },
+    {
+      title: "Éviter SELECT * dans les recipes de production",
+      level: "all",
+      do: "Lister explicitement les colonnes : <code>SELECT c.client_id, c.nom, o.montant_ht FROM clients c</code>. Garantit la stabilité du schéma de sortie en cas de changement de la source.",
+      dont: "<code>SELECT *</code> en production propage automatiquement les nouvelles colonnes de la source vers les datasets aval — peut casser des jobs ou polluer des tables finales."
+    },
+    {
+      title: "Commenter les parties complexes de la requête",
+      level: "all",
+      do: "Ajouter des commentaires sur la logique métier : <code>-- Exclusion des clients avec statut BLOQUE depuis + de 90 jours</code>. Indispensable pour les règles métier non évidentes.",
+      dont: "Ne pas écrire une requête de 80 lignes avec des conditions métier complexes sans aucun commentaire — dans 6 mois, même l'auteur ne sait plus pourquoi ce filtre existe."
+    },
+    {
+      title: "Utiliser des alias explicites sur toutes les tables et colonnes calculées",
+      level: "all",
+      do: "<code>SUM(montant_ht) AS ca_total_ht</code>, <code>FROM commandes cmd</code>. Les alias rendent la requête lisible et évitent les ambiguïtés sur les colonnes.",
+      dont: "Ne pas écrire <code>SUM(montant_ht)</code> sans alias dans un SELECT — la colonne de sortie sera nommée <code>SUM(montant_ht)</code> ou <code>col1</code> selon le moteur."
+    },
+    {
+      title: "Tester les jointures avec un COUNT avant la requête finale",
+      level: "senior",
+      do: "Avant de finaliser, vérifier la cardinalité : <code>SELECT COUNT(*), COUNT(DISTINCT client_id) FROM ...</code> pour détecter les doublons introduits par une mauvaise jointure.",
+      dont: "Ne pas supposer qu'une jointure <code>LEFT JOIN</code> sur <code>client_id</code> est unique sans vérification — si la table de droite a des doublons, la table finale est gonflée sans alerte."
+    },
+    {
+      title: "Indenter et formater les requêtes de manière cohérente",
+      level: "all",
+      do: "1 clause par ligne : <code>SELECT</code>, <code>FROM</code>, <code>JOIN</code>, <code>WHERE</code>, <code>GROUP BY</code>, <code>ORDER BY</code>. Indenter les CTEs et les sous-requêtes à 2 ou 4 espaces.",
+      dont: "Ne pas écrire toute la requête sur une seule ligne ou sans indentation — une requête SQL non formatée de 50 lignes est pratiquement illisible pour toute l'équipe."
+    },
+    {
+      title: "Filtrer sur des colonnes indexées ou partitionnées en priorité",
+      level: "senior",
+      do: "Dans PostgreSQL, filtrer d'abord sur les colonnes indexées : <code>WHERE date_commande >= '2024-01-01' AND statut = 'VALIDE'</code>. Les colonnes de partition en 1er.",
+      dont: "Ne pas appliquer des fonctions sur des colonnes indexées dans le WHERE : <code>WHERE YEAR(date_commande) = 2024</code> — cela désactive l'index et force un full scan."
+    },
+    {
+      title: "Utiliser QUALIFY ou des sous-requêtes pour la déduplication",
+      level: "senior",
+      do: "<code>SELECT *, ROW_NUMBER() OVER (PARTITION BY client_id ORDER BY date DESC) AS rn FROM commandes QUALIFY rn = 1</code>. Déduplication propre et explicite.",
+      dont: "Ne pas utiliser <code>SELECT DISTINCT</code> sur des tables larges sans comprendre pourquoi il y a des doublons — masque le problème sans le résoudre et dégrade les performances."
+    },
+    {
+      title: "Isoler la logique métier dans des CTEs, pas dans des sous-requêtes imbriquées",
+      level: "senior",
+      do: "Transformer les sous-requêtes imbriquées en CTEs nommées. Facilite le debug (on peut isoler chaque CTE), la lisibilité et la réutilisation de la logique.",
+      dont: "Ne pas écrire <code>SELECT * FROM (SELECT * FROM (SELECT * FROM ...))</code> sur 3 niveaux — impossible à lire, à tester partiellement et à modifier sans tout casser."
+    },
+    {
+      title: "Documenter la SQL recipe avec l'objectif métier en en-tête",
+      level: "all",
+      do: "Commencer chaque recipe SQL par un bloc de commentaires : <code>-- Objectif : calcul du CA mensuel par région / Source : core_commandes / Cible : rpt_ca_mensuel</code>.",
+      dont: "Ne pas livrer une recipe SQL sans contexte — quelqu'un qui reprend le projet 6 mois plus tard n'a aucun moyen de savoir pourquoi cette requête existe et ce qu'elle produit."
+    }
+  ]
+};
+
+function renderPractices(categoryKey) {
+  const items = DATA[categoryKey];
+  const grid = document.getElementById('grid-' + categoryKey);
+  if (grid.innerHTML !== '') return;
+
+  items.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'practice-card';
+    const levelMap = {
+      all: ['level-all', '👥 Tous niveaux'],
+      senior: ['level-senior', '⚡ Intermédiaire / Senior'],
+      beginner: ['level-beginner', '🌱 Débutant']
+    };
+    const [cls, lbl] = levelMap[item.level] || levelMap.all;
+
+    card.innerHTML = `
+      <div class="practice-header" onclick="toggleCard(this)">
+        <div class="practice-num">${String(i+1).padStart(2,'0')}</div>
+        <div class="practice-title">${item.title}</div>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="practice-body">
+        <span class="level-badge ${cls}">${lbl}</span>
+        <div class="do-dont">
+          <div class="do-block">
+            <div class="label">✅ À FAIRE</div>
+            ${item.do}
+          </div>
+          <div class="dont-block">
+            <div class="label">❌ À ÉVITER</div>
+            ${item.dont}
+          </div>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+function toggleCard(header) {
+  const card = header.closest('.practice-card');
+  card.classList.toggle('open');
+}
+
+function showCategory(cat) {
+  document.querySelectorAll('.category-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('cat-' + cat).classList.add('active');
+  document.querySelector(`[data-cat="${cat}"]`).classList.add('active');
+  renderPractices(cat);
+}
+
+// Init
+renderPractices('data');
+</script>
+</body>
+</html>
