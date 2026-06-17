@@ -1,0 +1,12 @@
+import dataiku
+import pandas as pd
+
+# --- Input: Managed Folder ---
+folder = dataiku.Folder("file1")
+
+with folder.get_download_stream("file1.xlsx") as stream:
+    df = pd.read_excel(stream, sheet_name="x", usecols="C:F", header=0)
+
+# --- Output: Dataset ---
+output = dataiku.Dataset("ds_sortie")
+output.write_with_schema(df)
