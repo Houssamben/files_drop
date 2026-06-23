@@ -1,0 +1,66 @@
+import dataiku
+import re
+
+# ─── CONFIGURATION ────────────────────────────────────────────────────────────
+NEW_PG_CONNECTION  = "NOUVELLE_CONNEXION_PG"   # <-- remplacer
+NEW_COS_CONNECTION = "NOUVELLE_CONNEXION_COS"  # <-- remplacer
+
+DRY_RUN = True  # Passer à False pour appliquer les changements
+# ──────────────────────────────────────────────────────────────────────────────
+
+client  = dataiku.api_client()
+project = client.get_default_project()
+
+pg_pattern  = re.compile(r'pg',  re.IGNORECASE)
+cos_pattern = re.compile(r'cos', re.IGNORECASE)
+
+changes = []
+
+for dataset in project.list_datasets(as_type='objects'):
+    settings = dataset.get_settings()
+    params   = settings.get_raw_params()
+    current_conn = params.get('connection')
+
+    if not current_conn:
+        continue
+
+    new_conn = None
+    conn_type = None
+
+    if pg_pattern.search(current_conn):
+        new_conn  = NEW_PG_CONNECTION
+        conn_type = "PostgreSQL"
+    elif cos_pattern.search(current_conn):
+        new_conn  = NEW_COS_CONNECTION
+        conn_type = "COS"
+
+    if new_conn:
+        changes.append({
+            'dataset'  : dataset.get_name(),
+            'type'     : conn_type,
+            'old_conn' : current_conn,
+            'new_conn' : new_conn,
+            'settings' : settings,
+            'params'   : params,
+        })
+
+# ─── RAPPORT ──────────────────────────────────────────────────────────────────
+if not changes:
+    print("Aucun dataset à modifier.")
+else:
+    print(f"{'DRY-RUN' if DRY_RUN else 'APPLICATION'} — {len(changes)} dataset(s) concerné(s):\n")
+    print(f"{'Dataset':<40} {'Type':<12} {'Ancienne connexion':<35} {'Nouvelle connexion'}")
+    print("-" * 120)
+    for c in changes:
+        print(f"{c['dataset']:<40} {c['type']:<12} {c['old_conn']:<35} {c['new_conn']}")
+
+    if not DRY_RUN:
+        print("\nApplication des changements...")
+        for c in changes:
+            c['params']['connection'] = c['new_conn']
+            c['settings'].save()
+            print(f"  ✓ {c['dataset']}")
+        print("\nTerminé.")
+    else:
+        print("\n⚠️  DRY_RUN=True — aucun changement appliqué.")
+        print("Pour appliquer : passer DRY_RUN = False et relancer.")
