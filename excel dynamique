@@ -1,0 +1,58 @@
+import io
+import shutil
+import dataiku
+import pandas as pd
+
+# --- Configuration ---
+FOLDER_NAME = "sharepoint_folder"   # Nom du Managed Folder SharePoint
+FILE_NAME = "file1.xlsx"            # Nom du fichier Excel
+SHEET_NAME = "Sheet1"               # Nom de l'onglet
+
+# --- Lecture depuis SharePoint Managed Folder ---
+folder = dataiku.Folder(FOLDER_NAME)
+
+with folder.get_download_stream(FILE_NAME) as file:
+    with io.BytesIO() as seekable:
+        shutil.copyfileobj(file, seekable)
+        seekable.seek(0)
+        raw = pd.read_excel(seekable, sheet_name=SHEET_NAME, header=None)
+
+# --- Détection des tables ---
+# Identifier les indices des colonnes entièrement vides
+empty_cols = [i for i in range(raw.shape[1]) if raw.iloc[:, i].isna().all()]
+
+# Construire les plages de colonnes entre les séparateurs vides
+separators = [-1] + empty_cols + [raw.shape[1]]
+col_ranges = []
+for i in range(len(separators) - 1):
+    start = separators[i] + 1
+    end = separators[i + 1]
+    if start < end:
+        col_ranges.append((start, end))
+
+# --- Extraction et écriture de chaque table ---
+for start, end in col_ranges:
+    block = raw.iloc[:, start:end]
+
+    # Nom de la table : ligne 2 (index 1), première colonne du bloc
+    table_name = str(block.iloc[1, 0]).strip()
+
+    # Header : ligne 4 (index 3)
+    headers = block.iloc[3, :].tolist()
+
+    # Données : ligne 5+ (index 4+)
+    data = block.iloc[4:, :].copy()
+    data.columns = headers
+    data = data.reset_index(drop=True)
+
+    # Supprimer les lignes entièrement vides
+    data = data.dropna(how="all")
+
+    # --- Écriture dans le dataset Dataiku ---
+    output_dataset_name = f"ds_{table_name}"  # ex: ds_Table_Ventes
+    try:
+        output = dataiku.Dataset(output_dataset_name)
+        output.write_with_schema(data)
+        print(f"[OK] Table '{table_name}' → dataset '{output_dataset_name}' ({len(data)} lignes, {len(data.columns)} colonnes)")
+    except Exception as e:
+        print(f"[ERREUR] Table '{table_name}' → {e}")
